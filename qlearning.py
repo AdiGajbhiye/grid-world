@@ -4,11 +4,10 @@ import time
 
 states_action = [[None for i in range(4)] for i in range(4)]
 stateMap = [[0 for i in range(4)] for i in range(4)]
-values = [[0 for i in range(4)] for i in range(4)]
 Qvalues = [[[0 for i in range(4)] for i in range(4)] for i in range(4)]
 
 discountFactor = 0.9
-epsilon = 0.8
+epsilon = 0.8 # how much exploration
 livingReward = -0.1
 
 def printMatrix(mat):
@@ -57,12 +56,6 @@ def printStateMap(i, j):
     printMatrix(stateMap)
     stateMap[i][j] = 0
 
-def printAction(action):
-    if action == 0: print("Down")
-    if action == 1: print("Up")
-    if action == 2: print("Left")
-    if action == 3: print("Right")
-
 def printQvalues():
     for i in reversed(Qvalues):
         for j in i:
@@ -83,33 +76,30 @@ def printPolicy():
         print()
     print('-'*50)
     
-def eGreedy():
+def shouldExplore():
     if random.random() < epsilon:
         return True
     return False
+ 
+def eGreedy(i, j):
+    if shouldExplore():
+        action = random.randint(0, 3)
+    else:
+        action = Qvalues[i][j].index(max(Qvalues[i][j]))
+    nexti, nextj= getNextState(i, j, action)
+    sample = getReward(nexti, nextj) + discountFactor*max(Qvalues[nexti][nextj])
+    Qvalues[i][j][action] = (1 - alpha)*Qvalues[i][j][action] + alpha*sample 
+    return nexti, nextj
     
 def train():
     stateMap[2][1] = 7
     currState = 0, 0
-    #printStateMap(currState[0], currState[1])
     while currState != (3, 3) and currState != (2, 3):
-        i, j = currState
-        if eGreedy():
-            action = random.randint(0, 3)
-        else:
-            action = Qvalues[i][j].index(max(Qvalues[i][j]))
-        nexti, nextj= getNextState(i, j, action)
-        sample = getReward(nexti, nextj) + discountFactor*max(Qvalues[nexti][nextj])
-        Qvalues[i][j][action] = (1 - alpha)*Qvalues[i][j][action] + alpha*sample 
-        # Temporal difference learning
-        #values[i][j] = (1 - alpha)*values[i][j] + alpha*max(Qvalues[i][j])
-        currState = nexti, nextj
-        printStateMap(i, j)
-        printAction(action)
+        currState = eGreedy(*currState)
+        printStateMap(*currState)
         printQvalues()
         printPolicy()
-        #printMatrix(values)
-    
+ 
 def main():
     global alpha
     n = 1
